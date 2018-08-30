@@ -17,6 +17,7 @@ import time
 import ssl
 import datetime
 import jwt
+import json
 import sys
 import os
 from locust import Locust, TaskSet, events, task
@@ -84,14 +85,22 @@ class IoTCoreMQTTClient:
             total_time = int((time.time() - start_time) * 1000)
             events.request_success.fire(request_type="mqtt_disconnect", name='disconnect', response_time=total_time, response_length=0)
 
+    def generatePayload(self, numberOfFields):
+        payload = {}
+        for i in range(1, numberOfFields+1):
+            iStr = "%03d" % (i,)
+            payload['field'+iStr] = 'payload_value_'+iStr
+        return json.dumps(payload)
+
     def send_event(self, numberOfMsg):
         mqtt_topic = '/devices/{}/events'.format(self.device_id)
+        payload = self.generatePayload(1)
         start_time = time.time()
         try:
             self.client.reconnect()
             self.client.loop_start()
-            for i in range(1, numberOfMsg):
-                msgInfo = self.client.publish(mqtt_topic, "{'test':'payload'}", qos=1)
+            for i in range(1, numberOfMsg+1):
+                msgInfo = self.client.publish(mqtt_topic, payload, qos=1)
                 msgInfo.wait_for_publish()
             self.client.disconnect()
         except ValueError as e:

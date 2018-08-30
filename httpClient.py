@@ -34,8 +34,17 @@ def create_publish_url(project_id, cloud_region, registry_id, device_id):
     return ('/projects/{}/locations/{}/registries/{}/devices/{}:{}').format(
     project_id, cloud_region, registry_id, device_id, 'publishEvent')
 
+def generatePayload(numberOfFields):
+    payload = {}
+    for i in range(1, numberOfFields+1):
+        iStr = "%03d" % (i,)
+        payload['field'+iStr] = 'payload_value_'+iStr
+    return json.dumps(payload)
+
+
+
 def create_send_body():
-    msg_bytes = base64.urlsafe_b64encode("{'test':'payload'}".encode('utf-8'))
+    msg_bytes = base64.urlsafe_b64encode(generatePayload(1).encode('utf-8'))
     body = {'binary_data': msg_bytes.decode('ascii')}
     return json.dumps(body)
 
