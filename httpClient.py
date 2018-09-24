@@ -41,10 +41,8 @@ def generatePayload(numberOfFields):
         payload['field'+iStr] = 'payload_value_'+iStr
     return json.dumps(payload)
 
-
-
-def create_send_body():
-    msg_bytes = base64.urlsafe_b64encode(generatePayload(1).encode('utf-8'))
+def create_send_body(payload_size):
+    msg_bytes = base64.urlsafe_b64encode(generatePayload(payload_size).encode('utf-8'))
     body = {'binary_data': msg_bytes.decode('ascii')}
     return json.dumps(body)
 
@@ -65,10 +63,11 @@ class Device(HttpLocust):
         cloud_region = os.environ.get('CLOUD_REGION')
         ca_certs = os.environ.get('CA_CERTS')
         algorithm = os.environ.get('ALGORITHM')
+        payload_size = int(os.environ.get('PAYLOAD_SIZE'))
         min_wait = 1
         max_wait = 1
         publish_url = create_publish_url(project_id, cloud_region, registry_id, device_id)
-        send_body = create_send_body()
+        send_body = create_send_body(payload_size)
         headers = create_headers(project_id, private_key_file, algorithm)
 
         @task(1)

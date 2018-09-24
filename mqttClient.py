@@ -29,7 +29,7 @@ class IoTCoreMQTTClient:
     jwt_expires_minutes = 20
 
 
-    def __init__(self, project_id, registry_id, device_id, private_key_file, cloud_region, ca_certs, algorithm):
+    def __init__(self, project_id, registry_id, device_id, private_key_file, cloud_region, ca_certs, algorithm, payload_size):
         self.project_id = project_id
         self.registry_id = registry_id
         self.device_id = device_id
@@ -37,6 +37,7 @@ class IoTCoreMQTTClient:
         self.cloud_region = cloud_region
         self.ca_certs = ca_certs
         self.algorithm = algorithm
+        self.payload_size = payload_size
 
     def create_jwt(self, project_id, private_key_file, algorithm):
         token = {
@@ -85,16 +86,16 @@ class IoTCoreMQTTClient:
             total_time = int((time.time() - start_time) * 1000)
             events.request_success.fire(request_type="mqtt_disconnect", name='disconnect', response_time=total_time, response_length=0)
 
-    def generatePayload(self, numberOfFields):
+    def generatePayload(self):
         payload = {}
-        for i in range(1, numberOfFields+1):
+        for i in range(1, self.payload_size+1):
             iStr = "%03d" % (i,)
             payload['field'+iStr] = 'payload_value_'+iStr
         return json.dumps(payload)
 
     def send_event(self, numberOfMsg):
         mqtt_topic = '/devices/{}/events'.format(self.device_id)
-        payload = self.generatePayload(1)
+        payload = self.generatePayload()
         start_time = time.time()
         try:
             self.client.reconnect()
@@ -120,7 +121,8 @@ class MQTTLocust(Locust):
         self.private_key_file,
         self.cloud_region,
         self.ca_certs,
-        self.algorithm)
+        self.algorithm,
+        self.payload_size)
 
 class Device(MQTTLocust):
     project_id = os.environ.get('PROJECT_ID')
@@ -130,6 +132,7 @@ class Device(MQTTLocust):
     cloud_region = os.environ.get('CLOUD_REGION')
     ca_certs = os.environ.get('CA_CERTS')
     algorithm = os.environ.get('ALGORITHM')
+    payload_size = int(os.environ.get('PAYLOAD_SIZE'))
 
     min_wait = 1
     max_wait = 1
